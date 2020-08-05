@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {Component, Dispatch, SetStateAction } from 'react';
 import {AutoSizer, List, InfiniteLoader} from 'react-virtualized';
 
 import ListItem from '../components/home/ListItem';
@@ -7,21 +7,26 @@ const API = 'https://api.themoviedb.org/3/discover/movie';
 const API_KEY = '4237669ebd35e8010beee2f55fd45546';
 
 interface IState {
-    movies: IDataResponse[];
     currentPage: number,
     totalPages: number,
 }
 
-export interface IDataResponse {
-    original_title: string;
+interface IProps {
+    movies: IDataResponse[];
+    setMovies: Dispatch<SetStateAction<IDataResponse[]>>;
 }
 
-class Home extends Component<{}, IState> {
-    constructor(props: {}) {
+export interface IDataResponse {
+    title: string;
+    id: string;
+    poster_path: string;
+}
+
+class Home extends Component<IProps, IState> {
+    constructor(props: IProps) {
         super(props);
 
         this.state = {
-            movies: [],
             currentPage: 1,
             totalPages: 1,
         }
@@ -36,7 +41,7 @@ class Home extends Component<{}, IState> {
     };
 
     isRowLoaded = ({index}:
-                       { index: number }) => !!this.state.movies[index];
+                       { index: number }) => !!this.props.movies[index];
 
     getPage = (coefficient: number = 0) => {
         type KeysParams = "api_key" | "page"
@@ -54,20 +59,20 @@ class Home extends Component<{}, IState> {
             .then(data => {
                 this.setState({currentPage: data.page});
                 this.setState({totalPages: data.total_pages});
-                this.setState({movies: [...this.state.movies, ...data.results]});
+                this.props.setMovies([...this.props.movies, ...data.results])
             });
     };
 
-    rowRenderer = (props: {index: number, key: string, style: object}) => {
+    rowRenderer = (params: {index: number, key: string, style: object}) => {
         return (
-            <ListItem movies={this.state.movies} keyId={props.key} {...props} />
+            <ListItem movies={this.props.movies} keyId={params.key} {...params} />
         )
     };
 
     render() {
         const hasNextPage = this.state.totalPages - this.state.currentPage;
-        const nextRowCount = hasNextPage ? this.state.movies.length + 1 : this.state.movies.length;
-        const rowCount = this.state.movies.length;
+        const nextRowCount = hasNextPage ? this.props.movies.length + 1 : this.props.movies.length;
+        const rowCount = this.props.movies.length;
 
         return (
             <InfiniteLoader
@@ -79,11 +84,12 @@ class Home extends Component<{}, IState> {
                     <AutoSizer>
                         {({height, width}) => (
                             <List
+                                style={{padding: '10px 20px'}}
                                 height={height}
                                 onRowsRendered={onRowsRendered}
                                 ref={registerChild}
                                 rowCount={rowCount}
-                                rowHeight={30}
+                                rowHeight={120}
                                 rowRenderer={this.rowRenderer}
                                 width={width}
                             />

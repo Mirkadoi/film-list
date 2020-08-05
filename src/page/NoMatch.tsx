@@ -6,7 +6,7 @@ const NoMatch = () => {
 
     return (
         <div>
-            No match for <code>{location.pathname}</code>
+            Страница с параметром <code>{location.pathname}</code> не найдена.
         </div>
     );
 };
