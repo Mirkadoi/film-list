@@ -1,28 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     BrowserRouter as Router,
     Switch,
     Route,
 } from 'react-router-dom';
 
-import Home from './page/Home';
-import Card from './page/Card';
-import NoMatch from './page/NoMatch';
+import Home, {IDataResponse} from './page/Home';
+import Ticket from './page/Ticket';
 
 import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
+    const [movies, setMovies] = useState<IDataResponse[] | []>([]);
+
     return (
         <Router>
             <Switch>
                 <Route exact path="/">
-                    <Home />
+                    <Home movies={movies} setMovies={setMovies}/>
                 </Route>
                 <Route path="/:id">
-                    <Card />
-                </Route>
-                <Route path="*">
-                    <NoMatch />
+                    <Ticket />
                 </Route>
             </Switch>
         </Router>
