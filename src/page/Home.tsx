@@ -1,13 +1,12 @@
 import React, {Component, Dispatch, SetStateAction} from 'react';
 import {AutoSizer, List, InfiniteLoader} from 'react-virtualized';
-import { Button } from 'react-bootstrap';
 
 import ListItem from '../components/home/ListItem';
 import Select from "../components/form/Select";
 import { getLSItem, setLSItem } from '../utils/localStorage'
 
-const API = 'https://api.themoviedb.org/3/discover/movie';
-const API_KEY = '4237669ebd35e8010beee2f55fd45546';
+const API: string | undefined = process.env.REACT_APP_API;
+const API_KEY: string | undefined = process.env.REACT_APP_API_KEY;
 
 interface IState {
     currentPage: number,
@@ -44,10 +43,6 @@ class Home extends Component<IProps, IState> {
             totalPages: 1,
             sortBy: getLSItem('sortBy') || 'popularity.desc',
         };
-
-        // @ts-ignore
-
-
     }
 
     async componentDidMount() {
@@ -96,7 +91,7 @@ class Home extends Component<IProps, IState> {
             ...activeAction.option
         };
 
-        let url = new URL(API);
+        let url = new URL(`${API}`);
         url.search = String(new URLSearchParams(params));
 
         return fetch(String(url))
@@ -117,7 +112,9 @@ class Home extends Component<IProps, IState> {
     bySort= (type: string) => {
         setLSItem('sortBy', type);
         this.setState({sortBy: type},
-            () => this.getPage('init'))
+            () => {
+                window.location.reload()
+            })
     };
 
     render() {
@@ -153,7 +150,6 @@ class Home extends Component<IProps, IState> {
                     )}
                 </InfiniteLoader>
             </>
-
         );
     }
 }

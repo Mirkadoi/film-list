@@ -18,7 +18,7 @@ const Ticket: FC = () => {
         overview,
     } = movieInfo;
 
-    const URL = 'https://image.tmdb.org/t/p/w500/';
+    const URL: string | undefined = process.env.REACT_APP_IMG_API;
     const POSTER_URL = size.width <= 576
         ? `${URL}${backdrop_path}`
         : `${URL}${poster_path}`;
