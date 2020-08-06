@@ -23,7 +23,6 @@ const Ticket: FC = () => {
         ? `${URL}${backdrop_path}`
         : `${URL}${poster_path}`;
 
-    console.log(movieInfo);
     return (
         <div className={styles.wrapper}>
             <div className={styles.ticket} >

@@ -8,11 +8,9 @@
 .ticket {
   display: flex;
   flex-wrap: wrap;
-  padding: 0 20px;
 
   @media (min-width: 576px) {
     flex-wrap: nowrap;
-    padding: 0 50px;
   }
 }
 

@@ -1,7 +1,10 @@
-import React, {Component, Dispatch, SetStateAction } from 'react';
+import React, {Component, Dispatch, SetStateAction} from 'react';
 import {AutoSizer, List, InfiniteLoader} from 'react-virtualized';
+import { Button } from 'react-bootstrap';
 
 import ListItem from '../components/home/ListItem';
+import Select from "../components/form/Select";
+import { getLSItem, setLSItem } from '../utils/localStorage'
 
 const API = 'https://api.themoviedb.org/3/discover/movie';
 const API_KEY = '4237669ebd35e8010beee2f55fd45546';
@@ -9,6 +12,7 @@ const API_KEY = '4237669ebd35e8010beee2f55fd45546';
 interface IState {
     currentPage: number,
     totalPages: number,
+    sortBy?: string,
 }
 
 interface IProps {
@@ -22,6 +26,15 @@ export interface IDataResponse {
     poster_path: string;
 }
 
+const typeSort = {
+    'popularity.asc' : 'Популярность по возрастанию',
+    'popularity.desc' : 'Популярность по убыванию',
+    'release_date.asc' : 'Дата выхода по возрастанию',
+    'release_date.desc' : 'Дата выхода по убыванию',
+    'vote_average.asc' : 'Рейтинг по возрастанию',
+    'vote_average.desc' : 'Рейтинг выхода по убыванию',
+};
+
 class Home extends Component<IProps, IState> {
     constructor(props: IProps) {
         super(props);
@@ -29,26 +42,58 @@ class Home extends Component<IProps, IState> {
         this.state = {
             currentPage: 1,
             totalPages: 1,
-        }
+            sortBy: getLSItem('sortBy') || 'popularity.desc',
+        };
+
+        // @ts-ignore
+
+
     }
 
     async componentDidMount() {
-       await this.getPage()
+        await this.getPage('init')
     }
 
     loadMoreRows = () => {
-        return this.getPage(1)
+        return this.getPage('next')
     };
 
     isRowLoaded = ({index}:
                        { index: number }) => !!this.props.movies[index];
 
-    getPage = (coefficient: number = 0) => {
-        type KeysParams = "api_key" | "page"
+    getPage = (action: string = 'next') => {
+        interface IResponse {
+            page: number,
+            total_pages: number,
+            results: [],
+        }
+
+        const init = {
+            option: {
+                page: `1`,
+            },
+            setState: (data: IResponse) => {
+                this.props.setMovies([...data.results])
+            }
+        };
+
+        const next = {
+            option: {
+                page: `${this.state.currentPage + 1}`,
+            },
+            setState: (data: IResponse) => {
+                this.props.setMovies([...this.props.movies, ...data.results])
+            }
+        };
+
+        const activeAction = action === 'next' ? next : init;
+
+        type KeysParams = "api_key" | "page" | "sort_by"
 
         const params: Record<KeysParams, string> = {
             api_key: `${API_KEY}`,
-            page: `${this.state.currentPage + coefficient}`,
+            sort_by: `${this.state.sortBy}`,
+            ...activeAction.option
         };
 
         let url = new URL(API);
@@ -59,14 +104,20 @@ class Home extends Component<IProps, IState> {
             .then(data => {
                 this.setState({currentPage: data.page});
                 this.setState({totalPages: data.total_pages});
-                this.props.setMovies([...this.props.movies, ...data.results])
+                activeAction.setState(data)
             });
     };
 
-    rowRenderer = (params: {index: number, key: string, style: object}) => {
+    rowRenderer = (params: { index: number, key: string, style: object }) => {
         return (
             <ListItem movies={this.props.movies} keyId={params.key} {...params} />
         )
+    };
+
+    bySort= (type: string) => {
+        setLSItem('sortBy', type);
+        this.setState({sortBy: type},
+            () => this.getPage('init'))
     };
 
     render() {
@@ -75,28 +126,34 @@ class Home extends Component<IProps, IState> {
         const rowCount = this.props.movies.length;
 
         return (
-            <InfiniteLoader
-                isRowLoaded={this.isRowLoaded}
-                loadMoreRows={this.loadMoreRows}
-                rowCount={nextRowCount}
-            >
-                {({onRowsRendered, registerChild}) => (
-                    <AutoSizer>
-                        {({height, width}) => (
-                            <List
-                                style={{padding: '10px 20px'}}
-                                height={height}
-                                onRowsRendered={onRowsRendered}
-                                ref={registerChild}
-                                rowCount={rowCount}
-                                rowHeight={120}
-                                rowRenderer={this.rowRenderer}
-                                width={width}
-                            />
-                        )}
-                    </AutoSizer>
-                )}
-            </InfiniteLoader>
+            <>
+                <Select
+                    libel="Сортировка"
+                    callback={this.bySort}
+                    select={typeSort}/>
+                <InfiniteLoader
+                    isRowLoaded={this.isRowLoaded}
+                    loadMoreRows={this.loadMoreRows}
+                    rowCount={nextRowCount}
+                >
+                    {({onRowsRendered, registerChild}) => (
+                        <AutoSizer>
+                            {({height, width}) => (
+                                <List
+                                    height={height}
+                                    onRowsRendered={onRowsRendered}
+                                    ref={registerChild}
+                                    rowCount={rowCount}
+                                    rowHeight={120}
+                                    rowRenderer={this.rowRenderer}
+                                    width={width}
+                                />
+                            )}
+                        </AutoSizer>
+                    )}
+                </InfiniteLoader>
+            </>
+
         );
     }
 }
